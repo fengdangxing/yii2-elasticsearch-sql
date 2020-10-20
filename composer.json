@@ -22,7 +22,7 @@
       }
     ],
     "require-dev":{
-      "fengdangxing/yii2-elasticsearch-sql":"dev-main"
+      "fengdangxing/yii2-elasticsearch-sql":"dev-master"
     },
     "autoload": {
       "psr-4": {
