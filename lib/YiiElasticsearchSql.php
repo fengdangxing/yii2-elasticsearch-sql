@@ -1,6 +1,6 @@
 <?php
 
-namespace Es;
+namespace lib;
 
 use yii\elasticsearch\ActiveRecord;
 
