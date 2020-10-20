@@ -2,6 +2,7 @@
     "name": "fengdangxing/yii2-elasticsearch-sql",
     "description": "yii2-elasticsearch-sql",
     "keywords": ["yii2", "yii2-elasticsearch", "yii2-elasticsearch-sql"],
+    "minimum-stability": "dev",
     "authors": [
         {
             "name": "fengdangxing",
@@ -19,5 +20,8 @@
         "type": "composer",
         "url": "https://asset-packagist.org"
       }
-    ]
+    ],
+    "require-dev":{
+      "fengdangxing/yii2-elasticsearch-sql":"dev-master"
+    }
 }
