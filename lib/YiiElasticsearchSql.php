@@ -4,7 +4,7 @@ namespace Es;
 
 use yii\elasticsearch\ActiveRecord;
 
-class Es extends ActiveRecord
+class YiiElasticsearchSql extends ActiveRecord
 {
     protected $andWhere;
     protected $notWhere;
