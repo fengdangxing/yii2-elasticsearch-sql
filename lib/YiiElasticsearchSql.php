@@ -11,6 +11,8 @@ class YiiElasticsearchSql extends ActiveRecord
     protected $betweenWhere;
     protected $compareWhere;
     protected $likeWhere;
+    protected $inWhere;
+    protected $notInWhere;
     protected $orderBy;
     protected $aggregate;
     protected $group_by;
@@ -230,6 +232,40 @@ class YiiElasticsearchSql extends ActiveRecord
     }
 
     /**
+     * @desc in查询
+     * @author 1
+     * @version v2.1
+     * @date: 2020/10/21
+     * @param $field
+     * @param array $value
+     * @return YiiElasticsearchSql
+     */
+    public function inWhere($field, $value = array())
+    {
+        if ($field && $value) {
+            $this->inWhere = [$field => $value];
+        }
+        return $this;
+    }
+
+    /**
+     * @desc not in查询
+     * @author 1
+     * @version v2.1
+     * @date: 2020/10/21
+     * @param $field
+     * @param array $value
+     * @return YiiElasticsearchSql
+     */
+    public function notInWhere($field, $value = array())
+    {
+        if ($field && $value) {
+            $this->notInWhere = [$field => $value];
+        }
+        return $this;
+    }
+
+    /**
      * @desc 求和
      * @author 1
      * @version v2.1
@@ -360,7 +396,7 @@ class YiiElasticsearchSql extends ActiveRecord
             $es_query->query($this->QueryWhere);
         }
         // 聚合统计
-        if ($this->aggregate) {
+        if ($this->aggregate || $this->group_by) {
             $this->getAggregate($es_query);
             $count = $es_query->search();
             return ['list' => $count['aggregations'], 'total' => $count['hits']['total']];
@@ -374,7 +410,6 @@ class YiiElasticsearchSql extends ActiveRecord
         // 分组
         $res = $es_query->offset($this->offset)->limit($this->limit)->asArray()->all();
         $list = array_column($res, '_source');
-
         return ['list' => $list, 'total' => $count['hits']['total']];
     }
 
@@ -401,6 +436,12 @@ class YiiElasticsearchSql extends ActiveRecord
         if ($this->likeWhere) {
             $this->bool['must'] = $this->likeWhere;
         }
+        if ($this->inWhere) {
+            $this->bool['must']['terms'] = $this->inWhere;
+        }
+        if ($this->notInWhere) {
+            $this->bool['must']['terms'] = $this->notInWhere;
+        }
         if ($this->bool) {
             $this->QueryWhere = [
                 "bool" => $this->bool
@@ -419,16 +460,25 @@ class YiiElasticsearchSql extends ActiveRecord
     private function getAggregate(ActiveQuery &$es_query)
     {
         if ($this->group_by) {
-            foreach ($this->aggregate as $key => $value) {
-                $aggs[$key . '_' . $value] = [$key => ['field' => $value]];
+            $terms = [];
+            $aggs = [];
+            if ($this->aggregate) {
+                foreach ($this->aggregate as $key => $value) {
+                    $aggs[$key . '_' . $value] = [$key => ['field' => $value]];
+                }
+                $terms['aggs'] = $aggs;
             }
-            foreach ($this->aggregate as $key => $value) {
-                $es_query->addAggregate('group_by_tag', ["terms" => ['field' => $value], 'aggs' => $aggs]);
+
+            foreach ($this->group_by as $key => $value) {
+                $terms['terms'] = ['field' => $value];
+                $es_query->addAggregate('group_by_tag', $terms);
             }
 
         } else {
-            foreach ($this->aggregate as $key => $value) {
-                $es_query->addAggregate($key . '_' . $value, [$key => ['field' => $value]]);
+            if ($this->aggregate) {
+                foreach ($this->aggregate as $key => $value) {
+                    $es_query->addAggregate($key . '_' . $value, [$key => ['field' => $value]]);
+                }
             }
         }
     }
