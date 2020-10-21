@@ -12,6 +12,8 @@ class YiiElasticsearchSql extends ActiveRecord
     protected $compareWhere;
     protected $likeWhere;
     protected $orderBy;
+    protected $aggregate;
+    protected $group_by;
     protected $QueryWhere = [];
     protected $bool = [];
     protected $offset = 0;
@@ -228,6 +230,86 @@ class YiiElasticsearchSql extends ActiveRecord
     }
 
     /**
+     * @desc 求和
+     * @author 1
+     * @version v2.1
+     * @date: 2020/10/21
+     * @param $field
+     * @return $this
+     */
+    public function sum($field)
+    {
+        if ($field) {
+            $this->aggregate['sum'] = $field;
+        }
+        return $this;
+    }
+
+    /**
+     * @desc 最小值
+     * @author 1
+     * @version v2.1
+     * @date: 2020/10/21
+     * @param $field
+     * @return $this
+     */
+    public function min($field)
+    {
+        if ($field) {
+            $this->aggregate['min'] = $field;
+        }
+        return $this;
+    }
+
+    /**
+     * @desc 最大值
+     * @author 1
+     * @version v2.1
+     * @date: 2020/10/21
+     * @param $field
+     * @return $this
+     */
+    public function max($field)
+    {
+        if ($field) {
+            $this->aggregate['max'] = $field;
+        }
+        return $this;
+    }
+
+    /**
+     * @desc 平均值
+     * @author 1
+     * @version v2.1
+     * @date: 2020/10/21
+     * @param $field
+     * @return $this
+     */
+    public function avg($field)
+    {
+        if ($field) {
+            $this->aggregate['avg'] = $field;
+        }
+        return $this;
+    }
+
+    /**
+     * @desc 聚合分组
+     * @author 1
+     * @version v2.1
+     * @date: 2020/10/21
+     * @param $field
+     * @return $this
+     */
+    public function groupBy($field)
+    {
+        if ($field) {
+            $this->group_by[] = $field;
+        }
+        return $this;
+    }
+
+    /**
      * @desc 排序
      * @author 1
      * @version v2.1
@@ -251,7 +333,7 @@ class YiiElasticsearchSql extends ActiveRecord
      * @date: 2020/10/20
      * @param int $offset
      * @param int $limit
-     * @return Es
+     * @return $this
      */
     public function setPage($offset = 0, $limit = 20)
     {
@@ -265,9 +347,10 @@ class YiiElasticsearchSql extends ActiveRecord
     }
 
     /**
-     * * 列表
+     * 列表
      * 默认返回object对象 返回数组 添加->asArray()
      *  * search 与 all 区别在于 all是在search基础上处理再拿出结果
+     * @throws \yii\elasticsearch\Exception
      */
     public function select()
     {
@@ -276,38 +359,23 @@ class YiiElasticsearchSql extends ActiveRecord
         if ($this->getQueryWhere() && !empty($this->QueryWhere)) {
             $es_query->query($this->QueryWhere);
         }
+        // 聚合统计
+        if ($this->aggregate) {
+            $this->getAggregate($es_query);
+            $count = $es_query->search();
+            return ['list' => $count['aggregations'], 'total' => $count['hits']['total']];
+        }
         // 排序
         if ($this->orderBy && !empty($this->orderBy)) {
             $es_query->orderby($this->orderBy);
         }
+
         $count = $es_query->search();
         // 分组
         $res = $es_query->offset($this->offset)->limit($this->limit)->asArray()->all();
         $list = array_column($res, '_source');
 
         return ['list' => $list, 'total' => $count['hits']['total']];
-    }
-
-    /**
-     * 获取聚合列表
-     * 默认返回object对象 返回数组 添加->asArray()
-     * search 与 all 区别在于 all是在search基础上处理再拿出结果
-     *
-     */
-    public function getAggList($aggregate_name, $addAggregate_arr = [], $query = [], $offset = 0, $limit = 20)
-    {
-        $es_query = self::find();// 聚合
-        if ($addAggregate_arr && !empty($addAggregate_arr)) {
-            $es_query->addAggregate($aggregate_name, $addAggregate_arr);
-        }
-        // 匹配查询
-        if ($query && !empty($query)) {
-            $es_query->query($query);
-            // 分组
-            $res = $es_query->offset($offset)->limit($limit)->search();
-            return ['list' => $res['hits']['hits'], $aggregate_name => $res['aggregations'][$aggregate_name]];
-
-        }
     }
 
     /**
@@ -338,7 +406,30 @@ class YiiElasticsearchSql extends ActiveRecord
                 "bool" => $this->bool
             ];
         }
-        print_r($this->QueryWhere);
         return $this->QueryWhere;
+    }
+
+    /**
+     * @desc 组合聚会计算
+     * @author 1
+     * @version v2.1
+     * @date: 2020/10/21
+     * @param ActiveQuery $es_query
+     */
+    private function getAggregate(ActiveQuery &$es_query)
+    {
+        if ($this->group_by) {
+            foreach ($this->aggregate as $key => $value) {
+                $aggs[$key . '_' . $value] = [$key => ['field' => $value]];
+            }
+            foreach ($this->aggregate as $key => $value) {
+                $es_query->addAggregate('group_by_tag', ["terms" => ['field' => $value], 'aggs' => $aggs]);
+            }
+
+        } else {
+            foreach ($this->aggregate as $key => $value) {
+                $es_query->addAggregate($key . '_' . $value, [$key => ['field' => $value]]);
+            }
+        }
     }
 }
