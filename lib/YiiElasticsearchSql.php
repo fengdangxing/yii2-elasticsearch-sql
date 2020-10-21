@@ -127,13 +127,13 @@ class YiiElasticsearchSql extends ActiveRecord
      * 单个
      * 默认返回object对象 返回数组 添加->asArray()
      */
-    public function getOne($query = [])
+    public function getOne()
     {
         $es_query = self::find();
 
         // 匹配查询
-        if ($query && !empty($query)) {
-            $es_query->query($query);
+        if ($this->getQueryWhere() && !empty($this->QueryWhere)) {
+            $es_query->query($this->QueryWhere);
         }
         // 分组
         $res = $es_query->one();
@@ -220,7 +220,7 @@ class YiiElasticsearchSql extends ActiveRecord
     {
         if ($field && $value) {
             $value = str_replace('%', '*', $value);
-            $this->likeWhere = ['query' => "$field:($value)"];
+            $this->likeWhere['query_string'] = ['fields' => [$field], 'query' => "$value"];
             // "query":"search_word:(*中国* NOT *美国* AND *VIP* AND *经济* OR *金融*)",
             // "default_operator":"and"
         }
@@ -273,8 +273,8 @@ class YiiElasticsearchSql extends ActiveRecord
     {
         $es_query = self::find();
         // 匹配查询
-        if ($this->getQueryWhere() && !empty($this->getQueryWhere())) {
-            $es_query->query($this->getQueryWhere());
+        if ($this->getQueryWhere() && !empty($this->QueryWhere)) {
+            $es_query->query($this->QueryWhere);
         }
         // 排序
         if ($this->orderBy && !empty($this->orderBy)) {
@@ -331,13 +331,14 @@ class YiiElasticsearchSql extends ActiveRecord
             $this->bool['must_not'] = $this->notWhere;
         }
         if ($this->likeWhere) {
-            $this->QueryWhere['query_string'] = $this->likeWhere;
+            $this->bool['must'] = $this->likeWhere;
         }
         if ($this->bool) {
             $this->QueryWhere = [
                 "bool" => $this->bool
             ];
         }
+        print_r($this->QueryWhere);
         return $this->QueryWhere;
     }
 }
