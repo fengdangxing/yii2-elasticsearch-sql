@@ -199,7 +199,7 @@ class YiiElasticsearchSql extends ActiveRecord
      * @param $field
      * @param $compare
      * @param $value
-     * @return Es
+     * @return $this
      */
     public function compareWhere($field, $compare, $value)
     {

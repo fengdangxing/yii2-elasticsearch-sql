@@ -9,6 +9,8 @@
 
 namespace es;
 
+use fengdangxing\YiiElasticsearchSql;
+
 /**
  * @desc es 用户模型类
  * @author 1
@@ -17,7 +19,7 @@ namespace es;
  * Class User
  * @package backend\models
  */
-class Orders extends Es
+class Orders extends YiiElasticsearchSql
 {
     /**
      * @desc 索引
