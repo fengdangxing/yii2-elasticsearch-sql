@@ -1,6 +1,6 @@
 <?php
 
-namespace fengdangxing;
+namespace fengdangxing\YiiElasticsearchSql;
 
 use yii\elasticsearch\ActiveRecord;
 
