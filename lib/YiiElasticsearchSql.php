@@ -383,6 +383,21 @@ class YiiElasticsearchSql extends ActiveRecord
     }
 
     /**
+     * @desc 根据条件删除数据
+     * @author Yvette
+     * @version v2.1
+     * @date 2020/10/22 下午5:08
+     */
+    public function deleteEs()
+    {
+        $es_query = self::find();
+        if ($this->getQueryWhere() && !empty($this->QueryWhere)) {
+            $es_query->query($this->QueryWhere);
+        }
+        $es_query->delete();
+    }
+
+    /**
      * 列表
      * 默认返回object对象 返回数组 添加->asArray()
      *  * search 与 all 区别在于 all是在search基础上处理再拿出结果
