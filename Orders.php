@@ -30,13 +30,13 @@ class Orders extends YiiElasticsearchSql
      */
     public static function index()
     {
-        return 'test_orders_es_db';
+        return 'oms_order_list_test_2';
     }
 
 
     public function attributes()
     {
-        return ['OrderCode', 'target_country', 'shop_id', 'AddTime'];
+        return ['order_sn', 'country', 'shop_id', 'create_time'];
     }
 
     /**
@@ -50,10 +50,10 @@ class Orders extends YiiElasticsearchSql
     {
         return [
             'properties' => [
-                'OrderCode' => ['type' => 'text'],
-                'target_country' => ['type' => 'keyword'],
-                'shop_id' => ['type' => 'keyword'],
-                'AddTime' => ['type' => 'keyword'],
+                'order_sn' => ['type' => self::$text],
+                'country' => ['type' => self::$keyword],
+                'shop_id' => ['type' => self::$integer],
+                'create_time' => ['type' => self::$date],
             ]
         ];
     }
