@@ -69,7 +69,7 @@ trait TraitSelect
     public function andWhere($condition = array())
     {
         if ($condition) {
-            $this->andWhere[] = ["match" => $condition];
+            $this->andWhere[] = $this->nestedQuery(["match" => $condition]);
         }
         return $this;
     }
@@ -85,7 +85,7 @@ trait TraitSelect
     public function notWhere($condition = array())
     {
         if ($condition) {
-            $this->notWhere[] = ["match" => $condition];
+            $this->notWhere[] = $this->nestedQuery(["match" => $condition]);
         }
         return $this;
     }
@@ -265,10 +265,10 @@ trait TraitSelect
             $this->bool['must'] = $this->likeWhere;
         }
         if ($this->inWhere) {
-            $this->bool['must']['terms'] = $this->inWhere;
+            $this->bool['must'][]['terms'] = $this->inWhere;
         }
         if ($this->notInWhere) {
-            $this->bool['must']['terms'] = $this->notInWhere;
+            $this->bool['must'][]['terms'] = $this->notInWhere;
         }
         if ($this->bool) {
             $this->QueryWhere = [
@@ -276,5 +276,50 @@ trait TraitSelect
             ];
         }
         return $this->QueryWhere;
+    }
+
+    /**
+     * @desc nested 查询类型判断
+     * @param array $where 查询条件
+     * @return array
+     * @version v3.1
+     * @date 2021/09/08
+     * @author Jero
+     */
+    private function nestedQuery($where)
+    {
+        $whereKey = array_keys($where)[0];
+
+        $nested = [];
+        foreach ($where[$whereKey] as $key => $value) {
+
+            if (!is_array($value)) return $where;
+
+            $nestedKey = array_keys($value);
+            $nestedValue = array_values($value);
+
+            //索引数组则跳出循环
+            if (is_integer($nestedKey[0])) return $where;
+
+            $nestedPath = $key . '.' . $nestedKey[0];
+
+            $nested = [
+                "nested" => [
+                    "path" => $key,
+                    "query" => [
+                        "bool" => [
+                            "must" => [
+                                "{$whereKey}" => [
+                                    $nestedPath => $nestedValue[0],
+                                ]
+                            ],
+
+                        ],
+                    ],
+                ],
+            ];
+        }
+
+        return $nested;
     }
 }
