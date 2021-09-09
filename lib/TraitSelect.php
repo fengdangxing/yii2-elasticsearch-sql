@@ -17,6 +17,7 @@ trait TraitSelect
 {
     protected $andWhere;
     protected $notWhere;
+    protected $nestedWhere;
     protected $betweenWhere;
     protected $compareWhere;
     protected $likeWhere;
@@ -95,6 +96,56 @@ trait TraitSelect
      * @author 1
      * @version v2.1
      * @date: 2020/10/20
+     * @param $condition ['field'=>111]
+     * @return $this
+     */
+    public function nestedAndWhere($p_field,$condition = array())
+    {
+        if ($condition) {
+            $this->nestedWhere[] = [
+                'nested' => [
+                    'path' => $p_field,
+                    'query' => [
+                        'bool' => [
+                            'must' => ['match' => $condition]
+                        ]
+                    ]
+                ]
+            ];
+        }
+        return $this;
+    }
+
+    /**
+     * @desc 搜索条件
+     * @author 1
+     * @version v2.1
+     * @date: 2020/10/20
+     * @param $condition ['field'=>111]
+     * @return $this
+     */
+    public function nestedInWhere($p_field,$condition = array())
+    {
+        if ($condition) {
+            $this->nestedWhere[] = [
+                'nested' => [
+                    'path' => $p_field,
+                    'query' => [
+                        'bool' => [
+                            'must' => ['terms' => $condition]
+                        ]
+                    ]
+                ]
+            ];
+        }
+        return $this;
+    }
+
+    /**
+     * @desc 搜索条件
+     * @author 1
+     * @version v2.1
+     * @date: 2020/10/20
      * @param $field
      * @param $from_time
      * @param $to_time
@@ -151,12 +202,12 @@ trait TraitSelect
      * @date: 2020/10/21
      * @param $field
      * @param array $value
-     * @return TraitSelect
+     * @return $this
      */
     public function inWhere($field, $value = array())
     {
         if ($field && $value) {
-            $this->inWhere = [$field => $value];
+            $this->inWhere = ['terms' => [$field => $value]];
         }
         return $this;
     }
@@ -168,15 +219,16 @@ trait TraitSelect
      * @date: 2020/10/21
      * @param $field
      * @param array $value
-     * @return TraitSelect
+     * @return $this
      */
     public function notInWhere($field, $value = array())
     {
         if ($field && $value) {
-            $this->notInWhere = [$field => $value];
+            $this->notInWhere = ['terms' => [$field => $value]];
         }
         return $this;
     }
+
 
     /**
      * @desc 排序
@@ -252,6 +304,9 @@ trait TraitSelect
         if ($this->andWhere) {
             $this->bool['must'] = $this->andWhere;
         }
+        if ($this->nestedWhere) {
+            $this->bool['must'] = $this->nestedWhere;
+        }
         if ($this->compareWhere) {
             $this->bool['must'] = $this->compareWhere;
         }
@@ -265,10 +320,10 @@ trait TraitSelect
             $this->bool['must'] = $this->likeWhere;
         }
         if ($this->inWhere) {
-            $this->bool['must']['terms'] = $this->inWhere;
+            $this->bool['must'] = $this->inWhere;
         }
         if ($this->notInWhere) {
-            $this->bool['must']['terms'] = $this->notInWhere;
+            $this->bool['must_not'] = $this->notInWhere;
         }
         if ($this->bool) {
             $this->QueryWhere = [
@@ -277,4 +332,5 @@ trait TraitSelect
         }
         return $this->QueryWhere;
     }
+
 }
